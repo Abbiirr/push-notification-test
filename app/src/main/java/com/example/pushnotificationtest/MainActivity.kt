@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -15,19 +16,17 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : ComponentActivity() {
+    private var FCMtoken: String? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
         FirebaseMessaging.getInstance().token
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    var token = task.result
+                    FCMtoken = task.result
                     // Handle the FCM token as needed
-                    println(token)
-                    // For testing, you can log it
-                    if (token != null) {
+                    FCMtoken?.let { token ->
                         println("FCM Token: $token")
-                        System.out.println("FCM Token: $token")
                     }
                 } else {
                     // Handle token retrieval failure
@@ -39,7 +38,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             color = MaterialTheme.colorScheme.background
                         ) {
-                            Greeting("Android")
+                            Greeting("Android", FCMtoken ?: "Token not available")
                         }
                     }
                 }
@@ -47,18 +46,21 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun Greeting(name: String, modifier: Modifier = Modifier) {
-        Text(
-            text = "Hello $name!",
-            modifier = modifier
-        )
+    fun Greeting(name: String, FCMtoken: String, modifier: Modifier = Modifier) {
+        SelectionContainer {
+            Text(
+                text = "Hello $name!\n" +
+                        "$FCMtoken",
+                modifier = modifier
+            )
+        }
     }
 
     @Preview(showBackground = true)
     @Composable
     fun GreetingPreview() {
         PushNotificationTestTheme {
-            Greeting("Android")
+            Greeting("Android", "TestToken")
         }
     }
 }
