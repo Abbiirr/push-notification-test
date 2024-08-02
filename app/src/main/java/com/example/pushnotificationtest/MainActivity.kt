@@ -14,43 +14,64 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.pushnotificationtest.ui.theme.PushNotificationTestTheme
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.installations.FirebaseInstallations
+
 
 class MainActivity : ComponentActivity() {
     private var FCMtoken: String? = null
+    private var instanceId: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
+
+        // Retrieve FCM Token
         FirebaseMessaging.getInstance().token
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     FCMtoken = task.result
-                    // Handle the FCM token as needed
-                    FCMtoken?.let { token ->
-                        println("FCM Token: $token")
-                    }
+                    println("FCM Token: $FCMtoken")
                 } else {
                     // Handle token retrieval failure
+                    println("FCM Token retrieval failed")
                 }
-                setContent {
-                    PushNotificationTestTheme {
-                        // A surface container using the 'background' color from the theme
-                        Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.background
-                        ) {
-                            Greeting("Android", FCMtoken ?: "Token not available")
-                        }
-                    }
+                setContentWithToken()
+            }
+
+        // Retrieve Instance ID
+        FirebaseInstallations.getInstance().id
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    instanceId = task.result
+                    println("Instance ID: $instanceId")
+                } else {
+                    // Handle ID retrieval failure
+                    println("Instance ID retrieval failed")
                 }
+                setContentWithToken()
             }
     }
 
+    private fun setContentWithToken() {
+        if (FCMtoken != null && instanceId != null) {
+            setContent {
+                PushNotificationTestTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        DisplayTokens("FCM Token: $FCMtoken\nInstance ID: $instanceId")
+                    }
+                }
+            }
+        }
+    }
+
     @Composable
-    fun Greeting(name: String, FCMtoken: String, modifier: Modifier = Modifier) {
+    fun DisplayTokens(tokenInfo: String, modifier: Modifier = Modifier) {
         SelectionContainer {
             Text(
-                text = "Hello $name!\n" +
-                        "$FCMtoken",
+                text = tokenInfo,
                 modifier = modifier
             )
         }
@@ -60,7 +81,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun GreetingPreview() {
         PushNotificationTestTheme {
-            Greeting("Android", "TestToken")
+            DisplayTokens("TestToken\nTestInstanceID")
         }
     }
 }
